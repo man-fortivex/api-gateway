@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign up — Gateway Console</title>
+<style>
+  :root {
+    --bg: #0a0e14;
+    --surface: #121826;
+    --border: #232b3d;
+    --text: #e6e9ef;
+    --text-muted: #8892a6;
+    --accent: #f2a93b;
+    --green: #3ecf8e;
+    --red: #f0546b;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .card {
+    width: 380px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px;
+  }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  p.sub { color: var(--text-muted); font-size: 13px; margin: 0 0 20px; }
+  label { display: block; font-size: 12px; color: var(--text-muted); margin: 14px 0 4px; }
+  label:first-of-type { margin-top: 0; }
+  input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 9px 10px;
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+  input:focus { outline: none; border-color: var(--accent); }
+  button {
+    width: 100%;
+    margin-top: 20px;
+    background: var(--accent);
+    color: #1a1206;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .error-text { color: var(--red); font-size: 12px; margin-top: 10px; display: none; }
+  .error-text.show { display: block; }
+  .result {
+    display: none;
+    margin-top: 8px;
+  }
+  .result.show { display: block; }
+  .result .warn { color: var(--accent); font-size: 12px; margin-bottom: 8px; }
+  .result code {
+    display: block;
+    font-family: var(--mono);
+    font-size: 12px;
+    word-break: break-all;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  .result .field { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div id="form-view">
+    <h1>Create your gateway</h1>
+    <p class="sub">Auth, rate limiting, and usage tracking for your API — in about 10 seconds.</p>
+    <form id="signup-form">
+      <label for="s-name">Company / project name</label>
+      <input id="s-name" required placeholder="Acme Inc">
+
+      <label for="s-slug">Slug (your gateway path)</label>
+      <input id="s-slug" required placeholder="acme" pattern="[a-z0-9-]+" title="lowercase letters, numbers, hyphens">
+
+      <label for="s-email">Email</label>
+      <input id="s-email" required type="email" placeholder="you@acme.com">
+
+      <label for="s-upstream">Your API's base URL</label>
+      <input id="s-upstream" required placeholder="https://api.acme-backend.com">
+
+      <button type="submit" id="s-submit">Create free gateway</button>
+      <div class="error-text" id="s-error"></div>
+    </form>
+  </div>
+
+  <div class="result" id="result-view">
+    <h1>You're set up 🎉</h1>
+    <div class="field">Your gateway path:</div>
+    <code id="r-slug"></code>
+    <div class="warn">Copy your API key now — it won't be shown again</div>
+    <code id="r-key"></code>
+    <div class="field">Call your API through:</div>
+    <code id="r-example"></code>
+  </div>
+</div>
+
+<script>
+document.getElementById("signup-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById("s-error");
+  errorEl.classList.remove("show");
+  const submitBtn = document.getElementById("s-submit");
+  submitBtn.disabled = true;
+
+  const payload = {
+    name: document.getElementById("s-name").value.trim(),
+    slug: document.getElementById("s-slug").value.trim(),
+    email: document.getElementById("s-email").value.trim(),
+    upstream_base_url: document.getElementById("s-upstream").value.trim(),
+  };
+
+  try {
+    const res = await fetch("/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || "Signup failed");
+
+    document.getElementById("r-slug").textContent = "/gw/" + body.slug;
+    document.getElementById("r-key").textContent = body.plaintext_key;
+    document.getElementById("r-example").textContent =
+      `curl ${location.origin}/gw/${body.slug}/your-path -H "X-API-Key: ${body.plaintext_key}"`;
+
+    document.getElementById("form-view").style.display = "none";
+    document.getElementById("result-view").classList.add("show");
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.add("show");
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>

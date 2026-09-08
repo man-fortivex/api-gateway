@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gateway Console</title>
+<style>
+  :root {
+    --bg: #0a0e14;
+    --surface: #121826;
+    --surface-raised: #171f30;
+    --border: #232b3d;
+    --text: #e6e9ef;
+    --text-muted: #8892a6;
+    --accent: #f2a93b;
+    --accent-dim: #7a5a24;
+    --green: #3ecf8e;
+    --red: #f0546b;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  a { color: inherit; }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  header .mark {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+
+  header .sub {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 28px;
+  }
+
+  @media (max-width: 760px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .panel h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0 0 16px 0;
+    font-weight: 600;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 12px 0 4px;
+  }
+
+  label:first-of-type { margin-top: 0; }
+
+  input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  button {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #1a1206;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-muted);
+  }
+
+  .btn-ghost:hover { color: var(--text); border-color: var(--text-muted); }
+
+  .btn-danger {
+    background: transparent;
+    border-color: var(--red);
+    color: var(--red);
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  .btn-danger:hover { background: var(--red); color: #1a0608; }
+
+  .empty {
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 24px 0;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+  }
+
+  .tenant-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .tenant-card:last-child { margin-bottom: 0; }
+
+  .tenant-head {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background: var(--surface-raised);
+  }
+
+  .tenant-name { font-weight: 600; }
+
+  .tenant-slug {
+    font-family: var(--mono);
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .badge {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .badge.free { color: var(--text-muted); }
+
+  .tenant-body {
+    padding: 14px 16px;
+    display: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .tenant-body.open { display: block; }
+
+  .upstream {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    word-break: break-all;
+  }
+
+  .key-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .key-row:last-of-type { border-bottom: none; }
+
+  .key-label { font-weight: 600; font-size: 13px; }
+  .key-prefix { font-family: var(--mono); color: var(--text-muted); font-size: 12px; }
+
+  .gauge-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+  }
+
+  .gauge {
+    flex: 1;
+    height: 6px;
+    background: var(--bg);
+    border-radius: 100px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .gauge-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.3s ease, background 0.3s ease;
+  }
+
+  .gauge-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .revoked { opacity: 0.4; }
+  .revoked .key-label::after { content: " (revoked)"; color: var(--red); font-weight: 400; }
+
+  .new-key-banner {
+    background: var(--surface-raised);
+    border: 1px solid var(--accent-dim);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+
+  .new-key-banner .warn {
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .new-key-banner code {
+    display: block;
+    font-family: var(--mono);
+    font-size: 12px;
+    word-break: break-all;
+    background: var(--bg);
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .add-key-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    align-items: flex-end;
+  }
+
+  .add-key-form > div { flex: 1; }
+  .add-key-form label { margin: 0 0 4px; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 13px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+
+  .error-text {
+    color: var(--red);
+    font-size: 12px;
+    margin-top: 8px;
+    display: none;
+  }
+
+  .error-text.show { display: block; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-left: 24px;
+  }
+
+  .tab-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--text); background: var(--surface-raised); border-color: var(--border); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  #tab-audit { grid-column: 1 / -1; }
+
+  details.advanced {
+    margin-top: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  details.advanced summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+
+  details.advanced textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 12px;
+    font-family: var(--mono);
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  details.advanced textarea:focus { outline: none; border-color: var(--accent); }
+  details.advanced .hint { font-size: 11px; color: var(--text-muted); margin: 2px 0 0; }
+
+  .webhook-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .webhook-row:last-of-type { border-bottom: none; }
+  .webhook-url { font-family: var(--mono); font-size: 12px; word-break: break-all; }
+
+  .event-badges { margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap; }
+  .event-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .checkbox-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+  .checkbox-row input { width: auto; }
+  .checkbox-row label { margin: 0; font-size: 12px; color: var(--text); }
+
+  .subsection-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin: 18px 0 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .audit-row {
+    display: grid;
+    grid-template-columns: 140px 160px 1fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    align-items: baseline;
+  }
+
+  .audit-row:last-of-type { border-bottom: none; }
+  .audit-time { color: var(--text-muted); font-family: var(--mono); }
+  .audit-action { font-weight: 600; }
+  .audit-detail { color: var(--text-muted); font-family: var(--mono); word-break: break-all; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="mark"></span>
+  <h1>Gateway Console</h1>
+  <span class="sub">auth · rate limits · usage, in one place</span>
+  <nav class="tabs" id="tabs" style="display:none;">
+    <button class="tab-btn active" data-tab="tenants">Tenants</button>
+    <button class="tab-btn" data-tab="audit">Audit Log</button>
+  </nav>
+  <button class="btn-ghost" id="logout-btn" style="margin-left:auto; display:none;">Log out</button>
+</header>
+
+<div id="login-screen" style="max-width:340px; margin: 80px auto;">
+  <div class="panel">
+    <h2>Admin login</h2>
+    <form id="login-form">
+      <label for="l-username">Username</label>
+      <input id="l-username" required autocomplete="username">
+
+      <label for="l-password">Password</label>
+      <input id="l-password" required type="password" autocomplete="current-password">
+
+      <button class="btn-primary" type="submit" id="l-submit">Log in</button>
+      <div class="error-text" id="l-error"></div>
+    </form>
+  </div>
+</div>
+
+<main id="app-main" style="display:none;">
+  <div class="tab-panel active" id="tab-tenants" style="display:contents;">
+  <section class="panel">
+    <h2>New tenant</h2>
+    <form id="tenant-form">
+      <label for="t-name">Name</label>
+      <input id="t-name" required placeholder="Acme Inc">
+
+      <label for="t-slug">Slug</label>
+      <input id="t-slug" required placeholder="acme" pattern="[a-z0-9-]+" title="lowercase letters, numbers, hyphens">
+
+      <label for="t-email">Contact email</label>
+      <input id="t-email" required type="email" placeholder="ops@acme.com">
+
+      <label for="t-upstream">Upstream base URL</label>
+      <input id="t-upstream" required placeholder="https://api.acme-backend.com">
+
+      <details class="advanced">
+        <summary>Advanced (optional)</summary>
+
+        <label for="t-graphql-path">GraphQL path</label>
+        <input id="t-graphql-path" placeholder="graphql">
+
+        <label for="t-deprecated-versions">Deprecated versions (comma-separated)</label>
+        <input id="t-deprecated-versions" placeholder="v1">
+
+        <label for="t-replicas">Multi-region replicas (JSON, optional)</label>
+        <textarea id="t-replicas" placeholder='[{"url":"https://us.acme.com","region":"us-east","priority":0}]'></textarea>
+        <p class="hint">Overrides "Upstream base URL" above when set. Lower priority = tried first.</p>
+
+        <label for="t-versions">Per-version upstreams (JSON, optional)</label>
+        <textarea id="t-versions" placeholder='{"v1":"https://old.acme.com","v2":"https://new.acme.com"}'></textarea>
+        <p class="hint">Requests to /gw/{slug}/v1/... route here instead of the default upstream.</p>
+
+        <label for="t-transforms">Transform rules (JSON, optional)</label>
+        <textarea id="t-transforms" placeholder='[{"type":"add_header","name":"X-Source","value":"gateway"}]'></textarea>
+        <p class="hint">Types: add_header, remove_header, rewrite_path_prefix, strip_json_field.</p>
+      </details>
+
+      <button class="btn-primary" type="submit" id="t-submit">Create tenant</button>
+      <div class="error-text" id="t-error"></div>
+    </form>
+  </section>
+
+  <section>
+    <div class="panel">
+      <h2>Tenants</h2>
+      <div id="tenant-list"><div class="empty">Loading…</div></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-panel" id="tab-audit" style="display:none;">
+    <div class="panel">
+      <h2>Audit log <button class="btn-ghost" id="audit-refresh" style="float:right; padding:2px 10px;">Refresh</button></h2>
+      <div id="audit-list"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "";
+const TOKEN_KEY = "gateway_admin_token";
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+function showApp() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app-main").style.display = "grid";
+  document.getElementById("logout-btn").style.display = "inline-block";
+  document.getElementById("tabs").style.display = "flex";
+  loadTenants();
+}
+
+function showLogin() {
+  document.getElementById("login-screen").style.display = "block";
+  document.getElementById("app-main").style.display = "none";
+  document.getElementById("logout-btn").style.display = "none";
+  document.getElementById("tabs").style.display = "none";
+}
+
+document.getElementById("logout-btn").addEventListener("click", () => {
+  clearToken();
+  showLogin();
+});
+
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    const target = btn.dataset.tab;
+    document.getElementById("tab-tenants").classList.toggle("active", target === "tenants");
+    document.getElementById("tab-tenants").style.display = target === "tenants" ? "contents" : "none";
+    document.getElementById("tab-audit").classList.toggle("active", target === "audit");
+    document.getElementById("tab-audit").style.display = target === "audit" ? "block" : "none";
+    if (target === "audit") loadAuditLog();
+  });
+});
+
+document.getElementById("audit-refresh").addEventListener("click", loadAuditLog);
+
+async function loadAuditLog() {
+  const list = document.getElementById("audit-list");
+  let entries;
+  try {
+    entries = await apiFetch("/admin/audit-log");
+  } catch (e) {
+    list.innerHTML = `<div class="error-text show">Failed to load audit log: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+
+  if (entries.length === 0) {
+    list.innerHTML = `<div class="empty">No audit entries yet</div>`;
+    return;
+  }
+
+  list.innerHTML = "";
+  for (const entry of entries) {
+    const row = document.createElement("div");
+    row.className = "audit-row";
+    const time = new Date(entry.created_at).toLocaleString();
+    row.innerHTML = `
+      <div class="audit-time">${escapeHtml(time)}</div>
+      <div>
+        <div class="audit-action">${escapeHtml(entry.action)}</div>
+        <div style="color:var(--text-muted); font-size:11px;">${escapeHtml(entry.actor)}</div>
+      </div>
+      <div class="audit-detail">${escapeHtml(entry.target_type)}:${escapeHtml(entry.target_id)} ${escapeHtml(JSON.stringify(entry.detail))}</div>
+    `;
+    list.appendChild(row);
+  }
+}
+
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById("l-error");
+  errorEl.classList.remove("show");
+  const submitBtn = document.getElementById("l-submit");
+  submitBtn.disabled = true;
+
+  try {
+    const res = await fetch(API + "/admin/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: document.getElementById("l-username").value,
+        password: document.getElementById("l-password").value,
+      }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || "Login failed");
+    setToken(body.access_token);
+    showApp();
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.add("show");
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+if (getToken()) { showApp(); } else { showLogin(); }
+
+function showToast(message, kind) {
+  const el = document.getElementById("toast");
+  el.textContent = message;
+  el.className = "toast show" + (kind ? " " + kind : "");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => { el.className = "toast"; }, 3200);
+}
+
+async function apiFetch(path, options) {
+  const opts = Object.assign({}, options || {});
+  opts.headers = Object.assign(
+    { "Content-Type": "application/json", "Authorization": "Bearer " + (getToken() || "") },
+    (options && options.headers) || {}
+  );
+  const res = await fetch(API + path, opts);
+
+  if (res.status === 401) {
+    clearToken();
+    showLogin();
+    throw new Error("Session expired — please log in again");
+  }
+
+  let body = null;
+  try { body = await res.json(); } catch (e) { /* no body */ }
+  if (!res.ok) {
+    const detail = (body && body.detail) ? JSON.stringify(body.detail) : res.statusText;
+    throw new Error(detail);
+  }
+  return body;
+}
+
+function gaugeColor(ratio) {
+  if (ratio >= 0.9) return "var(--red)";
+  if (ratio >= 0.6) return "var(--accent)";
+  return "var(--green)";
+}
+
+async function fetchLatestUsage(tenantId) {
+  try {
+    const rows = await apiFetch(`/billing/tenants/${tenantId}/usage?limit=1`);
+    return rows && rows.length ? rows[0] : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function renderKeyRow(tenant, key, usage) {
+  const row = document.createElement("div");
+  row.className = "key-row" + (key.is_active ? "" : " revoked");
+
+  const left = document.createElement("div");
+  left.innerHTML = `<div class="key-label">${escapeHtml(key.label)}</div>
+                     <div class="key-prefix">${escapeHtml(key.key_prefix)}••••</div>`;
+
+  const gaugeWrap = document.createElement("div");
+  gaugeWrap.className = "gauge-wrap";
+  const requestCount = usage ? usage.request_count : 0;
+  const ratio = Math.min(1, requestCount / key.rate_limit_per_minute);
+  gaugeWrap.innerHTML = `
+    <div class="gauge"><div class="gauge-fill" style="width:${Math.round(ratio * 100)}%; background:${gaugeColor(ratio)};"></div></div>
+    <div class="gauge-label">${requestCount}/${key.rate_limit_per_minute} rpm</div>
+  `;
+
+  const actions = document.createElement("div");
+  if (key.is_active) {
+    const btn = document.createElement("button");
+    btn.className = "btn-danger";
+    btn.textContent = "Revoke";
+    btn.onclick = async () => {
+      btn.disabled = true;
+      try {
+        await apiFetch(`/admin/api-keys/${key.id}`, { method: "DELETE" });
+        showToast("API key revoked", "success");
+        loadTenants();
+      } catch (e) {
+        showToast("Could not revoke key: " + e.message, "error");
+        btn.disabled = false;
+      }
+    };
+    actions.appendChild(btn);
+  }
+
+  row.appendChild(left);
+  row.appendChild(gaugeWrap);
+  row.appendChild(actions);
+  return row;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+async function renderTenantCard(tenant) {
+  const card = document.createElement("div");
+  card.className = "tenant-card";
+
+  const head = document.createElement("div");
+  head.className = "tenant-head";
+  head.innerHTML = `
+    <div>
+      <span class="tenant-name">${escapeHtml(tenant.name)}</span>
+      &nbsp;<span class="tenant-slug">/${escapeHtml(tenant.slug)}</span>
+    </div>
+    <span class="badge ${escapeHtml(tenant.plan)}">${escapeHtml(tenant.plan)}</span>
+  `;
+
+  const body = document.createElement("div");
+  body.className = "tenant-body";
+
+  head.onclick = () => {
+    const isOpen = body.classList.contains("open");
+    if (!isOpen) loadKeys(tenant, body);
+    body.classList.toggle("open");
+  };
+
+  card.appendChild(head);
+  card.appendChild(body);
+  return card;
+}
+
+async function loadKeys(tenant, body, revealPlaintextKey, revealWebhookSecret) {
+  body.innerHTML = `<div class="upstream">→ ${escapeHtml(tenant.upstream_base_url)}</div><div class="empty">Loading keys…</div>`;
+
+  let keys;
+  try {
+    keys = await apiFetch(`/admin/tenants/${tenant.id}/api-keys`);
+  } catch (e) {
+    body.innerHTML = `<div class="error-text show">Failed to load keys: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+
+  body.innerHTML = `<div class="upstream">→ ${escapeHtml(tenant.upstream_base_url)}</div>`;
+
+  if (revealPlaintextKey) {
+    const banner = document.createElement("div");
+    banner.className = "new-key-banner";
+    banner.innerHTML = `<div class="warn">Copy this now — it won't be shown again</div><code>${escapeHtml(revealPlaintextKey)}</code>`;
+    body.appendChild(banner);
+  }
+
+  if (keys.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No API keys yet";
+    body.appendChild(empty);
+  } else {
+    const usageByKey = await Promise.all(keys.map(k => fetchLatestUsage(tenant.id)));
+    keys.forEach((key, i) => {
+      body.appendChild(renderKeyRow(tenant, key, usageByKey[i]));
+    });
+  }
+
+  const form = document.createElement("div");
+  form.className = "add-key-form";
+  form.innerHTML = `
+    <div>
+      <label>Key label</label>
+      <input class="new-key-label" placeholder="prod" value="prod">
+    </div>
+    <div>
+      <label>Rate limit (req/min)</label>
+      <input class="new-key-limit" type="number" min="1" value="60">
+    </div>
+    <div>
+      <label>Path scope (optional)</label>
+      <input class="new-key-prefix" placeholder="e.g. reports">
+    </div>
+    <button class="btn-ghost new-key-submit" type="button">Issue key</button>
+  `;
+  form.querySelector(".new-key-submit").onclick = async () => {
+    const label = form.querySelector(".new-key-label").value.trim() || "default";
+    const limit = parseInt(form.querySelector(".new-key-limit").value, 10) || 60;
+    const prefix = form.querySelector(".new-key-prefix").value.trim() || null;
+    const submitBtn = form.querySelector(".new-key-submit");
+    submitBtn.disabled = true;
+    try {
+      const created = await apiFetch(`/admin/tenants/${tenant.id}/api-keys`, {
+        method: "POST",
+        body: JSON.stringify({ label, rate_limit_per_minute: limit, allowed_path_prefix: prefix })
+      });
+      showToast("API key created", "success");
+      loadKeys(tenant, body, created.plaintext_key);
+    } catch (e) {
+      showToast("Could not create key: " + e.message, "error");
+      submitBtn.disabled = false;
+    }
+  };
+  body.appendChild(form);
+
+  await loadWebhooks(tenant, body, revealWebhookSecret);
+}
+
+async function loadWebhooks(tenant, body, revealSecret) {
+  const section = document.createElement("div");
+  section.className = "webhooks-section";
+  section.innerHTML = `<div class="subsection-title">Webhooks</div>`;
+
+  let webhooks;
+  try {
+    webhooks = await apiFetch(`/admin/tenants/${tenant.id}/webhooks`);
+  } catch (e) {
+    section.innerHTML += `<div class="error-text show">Failed to load webhooks: ${escapeHtml(e.message)}</div>`;
+    body.appendChild(section);
+    return;
+  }
+
+  if (revealSecret) {
+    const banner = document.createElement("div");
+    banner.className = "new-key-banner";
+    banner.innerHTML = `<div class="warn">Signing secret — copy this now, it won't be shown again</div><code>${escapeHtml(revealSecret)}</code>`;
+    section.appendChild(banner);
+  }
+
+  const activeWebhooks = webhooks.filter((w) => w.is_active);
+  if (activeWebhooks.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No webhooks registered";
+    section.appendChild(empty);
+  } else {
+    activeWebhooks.forEach((wh) => {
+      const row = document.createElement("div");
+      row.className = "webhook-row";
+      const badges = (wh.event_types.length ? wh.event_types : ["all events"])
+        .map((e) => `<span class="event-badge">${escapeHtml(e)}</span>`)
+        .join("");
+      row.innerHTML = `
+        <div>
+          <div class="webhook-url">${escapeHtml(wh.url)}</div>
+          <div class="event-badges">${badges}</div>
+        </div>
+      `;
+      const delBtn = document.createElement("button");
+      delBtn.className = "btn-danger";
+      delBtn.textContent = "Remove";
+      delBtn.onclick = async () => {
+        delBtn.disabled = true;
+        try {
+          await apiFetch(`/admin/webhooks/${wh.id}`, { method: "DELETE" });
+          showToast("Webhook removed", "success");
+          loadKeys(tenant, body);
+        } catch (e) {
+          showToast("Could not remove webhook: " + e.message, "error");
+          delBtn.disabled = false;
+        }
+      };
+      row.appendChild(delBtn);
+      section.appendChild(row);
+    });
+  }
+
+  const eventOptions = ["quota.warning", "circuit.opened", "key.revoked"];
+  const form = document.createElement("div");
+  form.style.marginTop = "10px";
+  form.innerHTML = `
+    <label>Webhook URL</label>
+    <input class="new-webhook-url" placeholder="https://example.com/hooks/gateway">
+    ${eventOptions
+      .map(
+        (evt, i) => `
+      <div class="checkbox-row">
+        <input type="checkbox" class="new-webhook-event" value="${evt}" id="wh-evt-${i}-${tenant.id}">
+        <label for="wh-evt-${i}-${tenant.id}">${evt}</label>
+      </div>`
+      )
+      .join("")}
+    <p class="hint">Leave all unchecked to receive every event type.</p>
+    <button class="btn-ghost new-webhook-submit" type="button">Add webhook</button>
+  `;
+  form.querySelector(".new-webhook-submit").onclick = async () => {
+    const url = form.querySelector(".new-webhook-url").value.trim();
+    if (!url) {
+      showToast("Webhook URL is required", "error");
+      return;
+    }
+    const eventTypes = Array.from(form.querySelectorAll(".new-webhook-event:checked")).map((el) => el.value);
+    const submitBtn = form.querySelector(".new-webhook-submit");
+    submitBtn.disabled = true;
+    try {
+      const created = await apiFetch(`/admin/tenants/${tenant.id}/webhooks`, {
+        method: "POST",
+        body: JSON.stringify({ url, event_types: eventTypes }),
+      });
+      showToast("Webhook added", "success");
+      loadKeys(tenant, body, null, created.secret);
+    } catch (e) {
+      showToast("Could not add webhook: " + e.message, "error");
+      submitBtn.disabled = false;
+    }
+  };
+  section.appendChild(form);
+
+  body.appendChild(section);
+}
+
+async function loadTenants() {
+  const list = document.getElementById("tenant-list");
+  let tenants;
+  try {
+    tenants = await apiFetch("/admin/tenants");
+  } catch (e) {
+    list.innerHTML = `<div class="error-text show">Failed to load tenants: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+
+  if (tenants.length === 0) {
+    list.innerHTML = `<div class="empty">No tenants yet — create one on the left to get started</div>`;
+    return;
+  }
+
+  list.innerHTML = "";
+  for (const tenant of tenants) {
+    list.appendChild(await renderTenantCard(tenant));
+  }
+}
+
+document.getElementById("tenant-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById("t-error");
+  errorEl.classList.remove("show");
+  const submitBtn = document.getElementById("t-submit");
+  submitBtn.disabled = true;
+
+  const payload = {
+    name: document.getElementById("t-name").value.trim(),
+    slug: document.getElementById("t-slug").value.trim(),
+    email: document.getElementById("t-email").value.trim(),
+    upstream_base_url: document.getElementById("t-upstream").value.trim(),
+  };
+
+  const graphqlPath = document.getElementById("t-graphql-path").value.trim();
+  if (graphqlPath) payload.graphql_path = graphqlPath;
+
+  const deprecatedRaw = document.getElementById("t-deprecated-versions").value.trim();
+  if (deprecatedRaw) {
+    payload.deprecated_versions = deprecatedRaw.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+
+  const jsonFields = [
+    ["t-replicas", "upstream_replicas", []],
+    ["t-versions", "version_upstreams", {}],
+    ["t-transforms", "transform_rules", []],
+  ];
+  for (const [inputId, key, emptyValue] of jsonFields) {
+    const raw = document.getElementById(inputId).value.trim();
+    if (!raw) continue;
+    try {
+      payload[key] = JSON.parse(raw);
+    } catch (err) {
+      errorEl.textContent = `Invalid JSON in "${inputId}": ${err.message}`;
+      errorEl.classList.add("show");
+      submitBtn.disabled = false;
+      return;
+    }
+  }
+
+  try {
+    await apiFetch("/admin/tenants", { method: "POST", body: JSON.stringify(payload) });
+    showToast("Tenant created", "success");
+    e.target.reset();
+    loadTenants();
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.add("show");
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+// Initial load is triggered by showApp() once logged in (see top of script).
+</script>
+
+</body>
+</html>
