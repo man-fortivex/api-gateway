@@ -415,3 +415,4 @@ Latency p99:     222 ms
 - CI builds the Docker image but doesn't push/deploy anywhere — wire a
   registry login + deploy step once you have a real target (Fly.io,
   Railway, a VPS via SSH, etc.).
+## Setup notes
