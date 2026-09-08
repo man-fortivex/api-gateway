@@ -40,6 +40,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_models() -> None:
-    """Create tablee. In production, replace with Alembic migrations."""
+    """Create tables. In production, replace with Alembic migrations."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
